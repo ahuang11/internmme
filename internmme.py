@@ -21,7 +21,8 @@ hv.extension('bokeh')
 # INCREMENT THE MONTH WITH NEW DATA
 INIT_DT = pd.datetime(2018, 5, 8)  # must be 8
 VARIABLES = ['tmp2m', 'prate']
-VIEW_VARIABLE = VARIABLES[0]
+VIEW_VARIABLE = VARIABLES[0]  # read only tmp2m
+MEAN_FI = '{dt:%Y%m}.nc'.format(dt=INIT_DT)
 
 # defaults; no need to change
 MODELS = [
@@ -45,28 +46,31 @@ DATA_DIR = 'data'
 
 def multithread_dl():
     os.chdir(DATA_DIR)
-    dl_cmds = [WGET_FMT.format(model=model, dt=INIT_DT, variable=variable)
-               for model in MODELS for variable in VARIABLES]
 
-    for cmd in dl_cmds:
-        dl_fi = cmd.split('/')[-1]
-        if not os.path.exists(dl_fi):
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-            time.sleep(5)  # sleep 5 second to prevent overload
-    
-    try:
-        process.communicate()
-    except:
-        print('All files exists in {0}!'.format(DATA_DIR))
+    if not os.path.exists(MEAN_FI):
+        dl_cmds = [WGET_FMT.format(model=model, dt=INIT_DT, variable=variable)
+                   for model in MODELS for variable in VARIABLES]
+
+        for cmd in dl_cmds:
+            dl_fi = cmd.split('/')[-1]
+            if not os.path.exists(dl_fi):
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+                time.sleep(5)  # sleep 5 second to prevent overload
+        
+        try:
+            process.communicate()
+        except:
+            print('All files exists in {0}!'.format(DATA_DIR))
+    else:
+        print('Mean file exists; skipping download')
 
     os.chdir('..')
     return
 
 def build_ds(variable):
     os.chdir(DATA_DIR)
-    mean_fi = '{dt:%Y%m}.nc'.format(dt=INIT_DT)
 
-    if not os.path.exists(mean_fi):
+    if not os.path.exists(MEAN_FI):
         glob_fmt = '*{variable}.{dt:%Y%m}*.nc'.format(
             variable=variable, data_dir=DATA_DIR, dt=INIT_DT)
 
@@ -81,10 +85,10 @@ def build_ds(variable):
 
         ds = xr.concat(ds_list, 'model')
         ds_mean = ds.mean('ensmem')
-        ds_mean.to_netcdf(mean_fi)
+        ds_mean.to_netcdf(MEAN_FI)
     else:
         print('Mean is cached!')
-        ds_mean = xr.open_dataset(mean_fi, decode_times=False)
+        ds_mean = xr.open_dataset(MEAN_FI, decode_times=False)
 
     since = pd.to_datetime(ds_mean.target.units, format='months since %Y-%m-%d 00:00:00')
     ds_mean.target.values = [(since + pd.offsets.MonthBegin(month)).strftime('%Y-%m-%d')
