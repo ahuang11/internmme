@@ -17,7 +17,6 @@ import geoviews.feature as gf
 from holoext.xbokeh import Mod
 from holoext.utils import get_cmap
 from holoviews.streams import Stream
-from holoviews.operation.datashader import regrid
 
 hv.extension('bokeh')
 
