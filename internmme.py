@@ -118,10 +118,10 @@ def load_models(models, target):
 
 
 multithread_dl()
-ds = build_ds(VIEW_VARIABLE)
+ds_mean = build_ds(VIEW_VARIABLE)
 targets = ds.target.values
 
-gvds = gv.Dataset().redim.range(fcst=(-4, 4))
+gvds = gv.Dataset(ds_mean).redim.range(fcst=(-4, 4))
 
 class ModelSelector(Stream):
     target = param.ObjectSelector(
