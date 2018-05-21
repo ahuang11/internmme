@@ -119,7 +119,7 @@ def load_models(models, target):
 
 multithread_dl()
 ds_mean = build_ds(VIEW_VARIABLE)
-targets = ds.target.values
+targets = ds_mean.target.values
 
 gvds = gv.Dataset(ds_mean).redim.range(fcst=(-4, 4))
 
